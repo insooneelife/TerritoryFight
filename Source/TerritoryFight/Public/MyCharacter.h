@@ -115,6 +115,8 @@ private:
 
 
 private:
+
+    // Weak Ref?
     FBodyInstance* RHand;
     FBodyInstance* LHand;
 
