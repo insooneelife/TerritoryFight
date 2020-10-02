@@ -59,12 +59,12 @@ void UTerritoryFightGameInstance::LoadMenuWidget()
 {
     if (!ensure(MenuClass != nullptr)) return;
 
-    Menu = CreateWidget<UMainMenu>(this, MenuClass);
-    if (!ensure(Menu != nullptr)) return;
+    MainMenu = CreateWidget<UMainMenu>(this, MenuClass);
+    if (!ensure(MainMenu != nullptr)) return;
 
-    Menu->Setup();
+    MainMenu->Setup();
 
-    Menu->SetMenuInterface(this);
+    MainMenu->SetMenuInterface(this);
 }
 
 void UTerritoryFightGameInstance::InGameLoadMenu()
@@ -135,9 +135,9 @@ void UTerritoryFightGameInstance::OnCreateSessionComplete(FName SessionName, boo
         return;
     }
 
-    if (Menu != nullptr)
+    if (MainMenu != nullptr)
     {
-        Menu->Teardown();
+        MainMenu->Teardown();
     }
 
     UEngine* Engine = GetEngine();
@@ -168,7 +168,7 @@ void UTerritoryFightGameInstance::RefreshServerList()
 
 void UTerritoryFightGameInstance::OnFindSessionsComplete(bool Success)
 {
-    if (Success && SessionSearch.IsValid() && Menu != nullptr)
+    if (Success && SessionSearch.IsValid() && MainMenu != nullptr)
     {
         UE_LOG(LogTemp, Warning, TEXT("Finished Find Session"));
 
@@ -192,7 +192,7 @@ void UTerritoryFightGameInstance::OnFindSessionsComplete(bool Success)
             ServerNames.Add(Data);
         }
 
-        Menu->SetServerList(ServerNames);
+        MainMenu->SetServerList(ServerNames);
     }
 }
 
@@ -201,9 +201,9 @@ void UTerritoryFightGameInstance::Join(uint32 Index)
     if (!SessionInterface.IsValid()) return;
     if (!SessionSearch.IsValid()) return;
 
-    if (Menu != nullptr)
+    if (MainMenu != nullptr)
     {
-        Menu->Teardown();
+        MainMenu->Teardown();
     }
 
     SessionInterface->JoinSession(0, SESSION_NAME, SessionSearch->SearchResults[Index]);

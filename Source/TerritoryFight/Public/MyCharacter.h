@@ -32,6 +32,14 @@ public:
     UPROPERTY(EditAnywhere, Category = "My")
         TArray<UAnimMontage*> HitMontages;
 
+    /** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+        float BaseTurnRate;
+
+    /** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+        float BaseLookUpRate;
+
     // getter && setter
 public:
     float GetHp() const { return this->Hp; }
@@ -52,6 +60,11 @@ public:
 
     // events
 protected:
+    void TurnAtRate(float Rate);
+    void LookUpAtRate(float Rate);
+    void MoveForward(float Value);
+    void MoveRight(float Value);
+
     void OnAttackPress();
 
     UFUNCTION()
@@ -116,11 +129,10 @@ private:
 
 private:
 
-    // Weak Ref?
     FBodyInstance* RHand;
+
     FBodyInstance* LHand;
 
-    UCapsuleComponent* RootCapsule;
     FVector SaveAttackStartPos;
 
     bool IsOverlapped;

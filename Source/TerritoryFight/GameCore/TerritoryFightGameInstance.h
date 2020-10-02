@@ -45,8 +45,8 @@ private:
     TSubclassOf<class UUserWidget> MenuClass;
     TSubclassOf<class UUserWidget> InGameMenuClass;
 
-    // Weak Ref?
-    class UMainMenu* Menu;
+    UPROPERTY()
+    class UMainMenu* MainMenu;
 
     IOnlineSessionPtr SessionInterface;
     TSharedPtr<class FOnlineSessionSearch> SessionSearch;
