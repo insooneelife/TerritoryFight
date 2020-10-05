@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MyCharacter.h"
+#include "PlayerCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "PhysicsEngine/BodySetup.h"
@@ -10,11 +10,12 @@
 #include "Net/UnrealNetwork.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/Engine.h"
+#include "TerritoryFightGameInstance.h"
 
 // Sets default values
-AMyCharacter::AMyCharacter()
+APlayerCharacter::APlayerCharacter()
 {
-     
+
     // Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
 
@@ -29,7 +30,7 @@ AMyCharacter::AMyCharacter()
 }
 
 // Called when the game starts or when spawned
-void AMyCharacter::BeginPlay()
+void APlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
@@ -42,57 +43,71 @@ void AMyCharacter::BeginPlay()
     this->Hp = 100;
 }
 
-void AMyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-    DOREPLIFETIME(AMyCharacter, Hp);
-    DOREPLIFETIME(AMyCharacter, LastAttackSide);
+    DOREPLIFETIME(APlayerCharacter, Hp);
+    DOREPLIFETIME(APlayerCharacter, LastAttackSide);
 }
 
 
 // Called every frame
-void AMyCharacter::Tick(float DeltaTime)
+void APlayerCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
 }
 
 // Called to bind functionality to input
-void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+    PlayerInputComponent->BindAction("OpenMenu", IE_Pressed, this, &APlayerCharacter::OpenMenu);
 
     PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
     PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
-    PlayerInputComponent->BindAxis("MoveForward", this, &AMyCharacter::MoveForward);
-    PlayerInputComponent->BindAxis("MoveRight", this, &AMyCharacter::MoveRight);
+    PlayerInputComponent->BindAxis("MoveForward", this, &APlayerCharacter::MoveForward);
+    PlayerInputComponent->BindAxis("MoveRight", this, &APlayerCharacter::MoveRight);
 
     // We have 2 versions of the rotation bindings to handle different kinds of devices differently
     // "turn" handles devices that provide an absolute delta, such as a mouse.
     // "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
     PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-    PlayerInputComponent->BindAxis("TurnRate", this, &AMyCharacter::TurnAtRate);
+    PlayerInputComponent->BindAxis("TurnRate", this, &APlayerCharacter::TurnAtRate);
     PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
-    PlayerInputComponent->BindAxis("LookUpRate", this, &AMyCharacter::LookUpAtRate);
+    PlayerInputComponent->BindAxis("LookUpRate", this, &APlayerCharacter::LookUpAtRate);
 
-    PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AMyCharacter::OnAttackPress);
+
+    PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &APlayerCharacter::OnAttackPress);
+
+
 }
 
-void AMyCharacter::TurnAtRate(float Rate)
+void APlayerCharacter::OpenMenu()
+{
+    UTerritoryFightGameInstance* GameInst = Cast<UTerritoryFightGameInstance>(GetGameInstance());
+    if (GameInst != nullptr)
+    {
+        GameInst->InGameLoadMenu();
+    }
+}
+
+void APlayerCharacter::TurnAtRate(float Rate)
 {
     // calculate delta for this frame from the rate information
     AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 }
 
-void AMyCharacter::LookUpAtRate(float Rate)
+void APlayerCharacter::LookUpAtRate(float Rate)
 {
     // calculate delta for this frame from the rate information
     AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-void AMyCharacter::MoveForward(float Value)
+void APlayerCharacter::MoveForward(float Value)
 {
     if ((Controller != NULL) && (Value != 0.0f))
     {
@@ -106,7 +121,7 @@ void AMyCharacter::MoveForward(float Value)
     }
 }
 
-void AMyCharacter::MoveRight(float Value)
+void APlayerCharacter::MoveRight(float Value)
 {
     if ((Controller != NULL) && (Value != 0.0f))
     {
@@ -121,12 +136,12 @@ void AMyCharacter::MoveRight(float Value)
     }
 }
 
-void AMyCharacter::OnAttackPress()
+void APlayerCharacter::OnAttackPress()
 {
     AttackRPC();
 }
 
-void AMyCharacter::OnBeginOverlap(
+void APlayerCharacter::OnBeginOverlap(
     UPrimitiveComponent* OverlappedComponent,
     AActor* OtherActor,
     UPrimitiveComponent* OtherComp,
@@ -136,7 +151,7 @@ void AMyCharacter::OnBeginOverlap(
 {
 }
 
-void AMyCharacter::OnEndOverlap(
+void APlayerCharacter::OnEndOverlap(
     UPrimitiveComponent* OverlappedComponent,
     AActor* OtherActor,
     UPrimitiveComponent* OtherComp,
@@ -144,26 +159,29 @@ void AMyCharacter::OnEndOverlap(
 {
 }
 
-void AMyCharacter::OnAttacked(float InDamage, int Side)
+void APlayerCharacter::OnHit(float InDamage, int Side)
 {
-    UE_LOG(LogTemp, Warning, TEXT("OnAttacked !!!!!!!!!!!!!!!!!!!!! "));
     SetHp(GetHp() - InDamage);
     LastAttackSide = Side;
+
+    OnResetCombo_Implementation();
+
+    PlayMontageMulticast();
 }
 
-void AMyCharacter::OnRep_Hp()
+void APlayerCharacter::OnRep_Hp()
 {
     UE_LOG(LogTemp, Warning, TEXT("OnRep_Hp !!!!!!!!!!!!!!!!!!!!!  %d"), LastAttackSide);
-    PlayAnimMontage(HitMontages[LastAttackSide], 1.0f);
+
 }
 
 
-void AMyCharacter::AttackRPC_Implementation()
+void APlayerCharacter::AttackRPC_Implementation()
 {
     AttackMulticast();
 }
 
-void AMyCharacter::AttackMulticast_Implementation()
+void APlayerCharacter::AttackMulticast_Implementation()
 {
     if (IsAttacking)
     {
@@ -176,12 +194,17 @@ void AMyCharacter::AttackMulticast_Implementation()
     }
 }
 
+void APlayerCharacter::PlayMontageMulticast_Implementation()
+{
+    PlayAnimMontage(HitMontages[LastAttackSide], 1.0f);
+}
 
-void AMyCharacter::AttackStart()
+
+void APlayerCharacter::OnAttackStart_Implementation()
 {
     FTransform T;
 
-    if (this->AttackCount == 1 || this->AttackCount == 3)
+    if (this->AttackIdx == 1 || this->AttackIdx == 3)
     {
         T = this->RHand->GetUnrealWorldTransform();
     }
@@ -193,10 +216,10 @@ void AMyCharacter::AttackStart()
 }
 
 
-void AMyCharacter::AttackEnd()
+void APlayerCharacter::OnAttackEnd_Implementation()
 {
     FTransform T;
-    if (this->AttackCount == 1 || this->AttackCount == 3)
+    if (this->AttackIdx == 1 || this->AttackIdx == 3)
     {
         T = this->RHand->GetUnrealWorldTransform();
     }
@@ -213,14 +236,14 @@ void AMyCharacter::AttackEnd()
 }
 
 
-void AMyCharacter::ResetCombo()
+void APlayerCharacter::OnResetCombo_Implementation()
 {
-    this->AttackCount = 0;
+    this->AttackIdx = 0;
     this->SaveAttack = false;
     this->IsAttacking = false;
 }
 
-void AMyCharacter::ComboAttackSave()
+void APlayerCharacter::OnSaveAttack_Implementation()
 {
     if (SaveAttack)
     {
@@ -231,14 +254,14 @@ void AMyCharacter::ComboAttackSave()
 }
 
 
-void AMyCharacter::PlayNextAttackAnimMontage()
+void APlayerCharacter::PlayNextAttackAnimMontage()
 {
-    PlayAnimMontage(AttackMontages[AttackCount++], 1.0f);
-    AttackCount = AttackCount % 4;
+    PlayAnimMontage(AttackMontages[AttackIdx], 1.0f);
+    AttackIdx = (AttackIdx + 1) % 4;
 }
 
 
-void AMyCharacter::SphereSweep(FVector Start, FVector End, float Radius)
+void APlayerCharacter::SphereSweep(FVector Start, FVector End, float Radius)
 {
     FCollisionQueryParams CollParam;
     FCollisionObjectQueryParams CollObjParam(ECollisionChannel::ECC_Pawn);
@@ -255,16 +278,14 @@ void AMyCharacter::SphereSweep(FVector Start, FVector End, float Radius)
         FCollisionShape::MakeSphere(Radius),
         CollParam))
     {
-
         //UE_LOG(LogTemp, Warning, TEXT("Collision !!!!!!!!!!!!!!!!!!!!!  %s"),
         //    *OutHit.GetActor()->GetFullName(),
         //    *OutHit.GetComponent()->GetFullName());
 
-        AMyCharacter* HitCharacter = Cast<AMyCharacter>(OutHit.GetActor());
+        IHittable* HitCharacter = Cast<IHittable>(OutHit.GetActor());
         if (HitCharacter)
         {
-            HitCharacter->OnAttacked(10, 1);
-            //HitCharacter->SetHp(HitCharacter->GetHp() - 10);
+            HitCharacter->OnHit(10, 1);
         }
     }
 

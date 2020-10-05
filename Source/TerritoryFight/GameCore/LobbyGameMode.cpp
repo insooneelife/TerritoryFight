@@ -8,6 +8,11 @@
 const static FString GAME_MAP_PATH = TEXT("/Game/Maps/Game");
 const static FString LISTEN_TERM = TEXT("?listen");
 
+void ALobbyGameMode::BeginPlay()
+{
+    Super::BeginPlay();
+}
+
 void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
     Super::PostLogin(NewPlayer);

@@ -4,13 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "MyCharacter.generated.h"
+#include "Hittable.h"
+#include "Attackable.h"
+#include "PlayerCharacter.generated.h"
 
 class UStaticMeshComponent;
 class ACollisionActor;
 
-UCLASS()
-class TERRITORYFIGHT_API AMyCharacter : public ACharacter
+UCLASS(BlueprintType)
+class TERRITORYFIGHT_API APlayerCharacter : public ACharacter, public IHittable, public IAttackable
 {
     GENERATED_BODY()
 
@@ -18,7 +20,7 @@ public:
     // blueprint assetlink
 
     // Sets default values for this character's properties
-    AMyCharacter();
+    APlayerCharacter();
 
     UPROPERTY(EditAnywhere, Category = "My")
         TSubclassOf<AActor> AttackClass;
@@ -33,11 +35,11 @@ public:
         TArray<UAnimMontage*> HitMontages;
 
     /** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "My")
         float BaseTurnRate;
 
     /** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "My")
         float BaseLookUpRate;
 
     // getter && setter
@@ -60,6 +62,8 @@ public:
 
     // events
 protected:
+    void OpenMenu();
+
     void TurnAtRate(float Rate);
     void LookUpAtRate(float Rate);
     void MoveForward(float Value);
@@ -83,8 +87,14 @@ protected:
             UPrimitiveComponent* OtherComp,
             int32 OtherBodyIndex);
 
+    // interface
+public:
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Hittable")
+        void OnHitBlueprint(float InDamage, int Side);
 
-    void OnAttacked(float InDamage, int Side);
+    virtual void OnHitBlueprint_Implementation(float InDamage, int Side) override { OnHit(InDamage, Side); }
+
+    void OnHit(float InDamage, int Side) override;
 
     // network
 public:
@@ -107,19 +117,30 @@ public:
         void AttackMulticast();
 
 
+    UFUNCTION(NetMulticast, Reliable)
+        void PlayMontageMulticast();
+
     // animation notify
 public:
-    UFUNCTION(BlueprintCallable, Category = "AMyCharacter")
-        void AttackStart();
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AMyCharacter")
+        void OnAttackStart();
 
-    UFUNCTION(BlueprintCallable, Category = "AMyCharacter")
-        void AttackEnd();
+    virtual void OnAttackStart_Implementation() override;
 
-    UFUNCTION(BlueprintCallable, Category = "AMyCharacter")
-        void ResetCombo();
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AMyCharacter")
+        void OnAttackEnd();
 
-    UFUNCTION(BlueprintCallable, Category = "AMyCharacter")
-        void ComboAttackSave();
+    virtual void OnAttackEnd_Implementation() override;
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AMyCharacter")
+        void OnResetCombo();
+
+    virtual void OnResetCombo_Implementation() override;
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AMyCharacter")
+        void OnSaveAttack();
+
+    virtual void OnSaveAttack_Implementation() override;
 
 
 private:
@@ -138,7 +159,7 @@ private:
     bool IsOverlapped;
     bool IsAttacking;
     bool SaveAttack;
-    int AttackCount;
+    int AttackIdx;
 };
 
 

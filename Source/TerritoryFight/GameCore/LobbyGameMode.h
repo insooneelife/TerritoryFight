@@ -16,6 +16,8 @@ class TERRITORYFIGHT_API ALobbyGameMode : public ATerritoryFightGameMode
 
 public:
 
+    virtual void BeginPlay() override;
+
     void PostLogin(APlayerController* NewPlayer) override;
 
     void Logout(AController* Exiting) override;
