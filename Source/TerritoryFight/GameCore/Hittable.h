@@ -24,9 +24,9 @@ class TERRITORYFIGHT_API IHittable
 public:
 
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-        void OnHitBlueprint(float InDamage, int Side);
+        void OnHitBlueprint(float InDamage, int InHitIdx);
 
-    virtual void OnHitBlueprint_Implementation(float InDamage, int Side) = 0;
+    virtual void OnHitBlueprint_Implementation(float InDamage, int InHitIdx) = 0;
 
-    virtual void OnHit(float InDamage, int Side) = 0;
+    virtual void OnHit(float InDamage, int InHitIdx) = 0;
 };

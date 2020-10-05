@@ -10,6 +10,7 @@
 
 class UStaticMeshComponent;
 class ACollisionActor;
+class UParticleSystem;
 
 UCLASS(BlueprintType)
 class TERRITORYFIGHT_API APlayerCharacter : public ACharacter, public IHittable, public IAttackable
@@ -33,6 +34,9 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "My")
         TArray<UAnimMontage*> HitMontages;
+
+    UPROPERTY(EditAnywhere, Category = "My")
+        TArray<UParticleSystem*> MeleeAttackChargeParticles;
 
     /** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "My")
@@ -90,21 +94,26 @@ protected:
     // interface
 public:
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Hittable")
-        void OnHitBlueprint(float InDamage, int Side);
+        void OnHitBlueprint(float InDamage, int InHitIdx);
 
-    virtual void OnHitBlueprint_Implementation(float InDamage, int Side) override { OnHit(InDamage, Side); }
+    virtual void OnHitBlueprint_Implementation(float InDamage, int InHitIdx) override { OnHit(InDamage, InHitIdx); }
 
-    void OnHit(float InDamage, int Side) override;
+    void OnHit(float InDamage, int InHitIdx) override;
 
     // network
 public:
 
-    //UPROPERTY(BlueprintReadWrite, Category = "My")
     UPROPERTY(ReplicatedUsing = OnRep_Hp, BlueprintReadWrite, Category = "My")
         float Hp;
 
     UPROPERTY(Replicated)
-        int LastAttackSide;
+        bool IsAttacking;
+
+    UPROPERTY(Replicated)
+        bool SaveAttack;
+
+    UPROPERTY(Replicated)
+        int AttackIdx;
 
     UFUNCTION()
         void OnRep_Hp();
@@ -114,37 +123,44 @@ public:
 
 
     UFUNCTION(NetMulticast, Reliable)
-        void AttackMulticast();
+        void PlayAttackMontageMulticast(int InAttackIdx);
 
 
     UFUNCTION(NetMulticast, Reliable)
-        void PlayMontageMulticast();
+        void PlayHitMontageMulticast(int InHitIdx);
+
+
+    UFUNCTION(NetMulticast, Reliable)
+        void SpawnParticleMulticast(FVector ImpactPos);
 
     // animation notify
 public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AMyCharacter")
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "My")
         void OnAttackStart();
 
     virtual void OnAttackStart_Implementation() override;
 
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AMyCharacter")
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "My")
         void OnAttackEnd();
 
     virtual void OnAttackEnd_Implementation() override;
 
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AMyCharacter")
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "My")
         void OnResetCombo();
 
     virtual void OnResetCombo_Implementation() override;
 
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AMyCharacter")
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "My")
         void OnSaveAttack();
 
     virtual void OnSaveAttack_Implementation() override;
 
+    // particle system
+private:
+    void SpawnParticle(UParticleSystem* Particle, FVector SpawnLocation);
+
 
 private:
-    void PlayNextAttackAnimMontage();
     void SphereSweep(FVector Start, FVector End, float Radius);
 
 
@@ -155,11 +171,7 @@ private:
     FBodyInstance* LHand;
 
     FVector SaveAttackStartPos;
-
-    bool IsOverlapped;
-    bool IsAttacking;
-    bool SaveAttack;
-    int AttackIdx;
+    
 };
 
 

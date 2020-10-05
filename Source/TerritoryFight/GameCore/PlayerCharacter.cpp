@@ -11,6 +11,8 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/Engine.h"
 #include "TerritoryFightGameInstance.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -48,7 +50,10 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
     DOREPLIFETIME(APlayerCharacter, Hp);
-    DOREPLIFETIME(APlayerCharacter, LastAttackSide);
+
+    DOREPLIFETIME(APlayerCharacter, AttackIdx);
+    DOREPLIFETIME(APlayerCharacter, SaveAttack);
+    DOREPLIFETIME(APlayerCharacter, IsAttacking);
 }
 
 
@@ -159,78 +164,91 @@ void APlayerCharacter::OnEndOverlap(
 {
 }
 
-void APlayerCharacter::OnHit(float InDamage, int Side)
+void APlayerCharacter::OnHit(float InDamage, int InHitIdx)
 {
-    SetHp(GetHp() - InDamage);
-    LastAttackSide = Side;
+    if (HasAuthority())
+    {
+        SetHp(GetHp() - InDamage);
 
-    OnResetCombo_Implementation();
+        OnResetCombo_Implementation();
 
-    PlayMontageMulticast();
+        PlayHitMontageMulticast(InHitIdx);
+    }
 }
 
 void APlayerCharacter::OnRep_Hp()
 {
-    UE_LOG(LogTemp, Warning, TEXT("OnRep_Hp !!!!!!!!!!!!!!!!!!!!!  %d"), LastAttackSide);
-
 }
 
 
 void APlayerCharacter::AttackRPC_Implementation()
 {
-    AttackMulticast();
+    if (HasAuthority())
+    {
+        if (IsAttacking)
+        {
+            SaveAttack = true;
+        }
+        else
+        {
+            IsAttacking = true;
+            PlayAttackMontageMulticast(AttackIdx);
+            AttackIdx = (AttackIdx + 1) % 4;
+        }
+    }
 }
 
-void APlayerCharacter::AttackMulticast_Implementation()
+void APlayerCharacter::PlayAttackMontageMulticast_Implementation(int InAttackIdx)
 {
-    if (IsAttacking)
-    {
-        SaveAttack = true;
-    }
-    else
-    {
-        IsAttacking = true;
-        PlayNextAttackAnimMontage();
-    }
+    PlayAnimMontage(AttackMontages[InAttackIdx], 1.0f);
 }
 
-void APlayerCharacter::PlayMontageMulticast_Implementation()
+void APlayerCharacter::PlayHitMontageMulticast_Implementation(int InHitIdx)
 {
-    PlayAnimMontage(HitMontages[LastAttackSide], 1.0f);
+    PlayAnimMontage(HitMontages[InHitIdx], 1.0f);
+}
+
+void APlayerCharacter::SpawnParticleMulticast_Implementation(FVector ImpactPos)
+{
+    int RandIndex = FMath::RandRange(0, MeleeAttackChargeParticles.Num() - 1);
+    SpawnParticle(MeleeAttackChargeParticles[RandIndex], ImpactPos);
 }
 
 
 void APlayerCharacter::OnAttackStart_Implementation()
 {
-    FTransform T;
+    if (HasAuthority())
+    {
+        FTransform T;
 
-    if (this->AttackIdx == 1 || this->AttackIdx == 3)
-    {
-        T = this->RHand->GetUnrealWorldTransform();
+        if (this->AttackIdx == 1 || this->AttackIdx == 3)
+        {
+            T = this->RHand->GetUnrealWorldTransform();
+        }
+        else
+        {
+            T = this->LHand->GetUnrealWorldTransform();
+        }
+        this->SaveAttackStartPos = T.GetLocation();
     }
-    else
-    {
-        T = this->LHand->GetUnrealWorldTransform();
-    }
-    this->SaveAttackStartPos = T.GetLocation();
 }
 
 
 void APlayerCharacter::OnAttackEnd_Implementation()
 {
-    FTransform T;
-    if (this->AttackIdx == 1 || this->AttackIdx == 3)
-    {
-        T = this->RHand->GetUnrealWorldTransform();
-    }
-    else
-    {
-        T = this->LHand->GetUnrealWorldTransform();
-    }
-
     // logic must be called at server
     if (HasAuthority())
     {
+        FTransform T;
+        if (this->AttackIdx == 1 || this->AttackIdx == 3)
+        {
+            T = this->RHand->GetUnrealWorldTransform();
+        }
+        else
+        {
+            T = this->LHand->GetUnrealWorldTransform();
+        }
+
         SphereSweep(this->SaveAttackStartPos, T.GetLocation(), 50.0f);
     }
 }
@@ -238,28 +256,34 @@ void APlayerCharacter::OnAttackEnd_Implementation()
 
 void APlayerCharacter::OnResetCombo_Implementation()
 {
-    this->AttackIdx = 0;
-    this->SaveAttack = false;
-    this->IsAttacking = false;
+    if (HasAuthority())
+    {
+        this->AttackIdx = 0;
+        this->SaveAttack = false;
+        this->IsAttacking = false;
+    }
 }
 
 void APlayerCharacter::OnSaveAttack_Implementation()
 {
-    if (SaveAttack)
+    if (HasAuthority())
     {
-        SaveAttack = false;
+        if (SaveAttack)
+        {
+            SaveAttack = false;
 
-        PlayNextAttackAnimMontage();
+            PlayAttackMontageMulticast(AttackIdx);
+            AttackIdx = (AttackIdx + 1) % 4;
+        }
     }
 }
 
 
-void APlayerCharacter::PlayNextAttackAnimMontage()
+void APlayerCharacter::SpawnParticle(UParticleSystem* Particle, FVector SpawnLocation)
 {
-    PlayAnimMontage(AttackMontages[AttackIdx], 1.0f);
-    AttackIdx = (AttackIdx + 1) % 4;
+    UParticleSystemComponent* ParticleSystem = UGameplayStatics::SpawnEmitterAtLocation(
+        GetWorld(), Particle, FTransform(FQuat::Identity, SpawnLocation));
 }
-
 
 void APlayerCharacter::SphereSweep(FVector Start, FVector End, float Radius)
 {
@@ -286,10 +310,12 @@ void APlayerCharacter::SphereSweep(FVector Start, FVector End, float Radius)
         if (HitCharacter)
         {
             HitCharacter->OnHit(10, 1);
+
+            SpawnParticleMulticast(OutHit.ImpactPoint);
+            
+            //GetWorld()->SpawnActor<AActor>(AttackClass, OutHit.ImpactPoint, FQuat::Identity.Rotator());
         }
     }
-
-    GetWorld()->SpawnActor<AActor>(AttackClass, End, FQuat::Identity.Rotator());
 }
 
 
