@@ -17,7 +17,6 @@
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
-
     // Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
 
@@ -248,7 +247,6 @@ void APlayerCharacter::OnAttackEnd_Implementation()
         {
             T = this->LHand->GetUnrealWorldTransform();
         }
-
         SphereSweep(this->SaveAttackStartPos, T.GetLocation(), 50.0f);
     }
 }
