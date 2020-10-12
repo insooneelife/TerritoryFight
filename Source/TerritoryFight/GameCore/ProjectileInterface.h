@@ -6,8 +6,9 @@
 #include "UObject/Interface.h"
 #include "ProjectileInterface.generated.h"
 
+
 // This class does not need to be modified.
-UINTERFACE(Blueprintable, MinimalAPI)
+UINTERFACE(BlueprintType, MinimalAPI)
 class UProjectileInterface : public UInterface
 {
 	GENERATED_BODY()

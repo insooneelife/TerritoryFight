@@ -163,17 +163,6 @@ void APlayerCharacter::OnEndOverlap(
 {
 }
 
-void APlayerCharacter::OnHit(float InDamage, int InHitIdx)
-{
-    if (HasAuthority())
-    {
-        SetHp(GetHp() - InDamage);
-
-        OnResetCombo_Implementation();
-
-        PlayHitMontageMulticast(InHitIdx);
-    }
-}
 
 void APlayerCharacter::OnRep_Hp()
 {
@@ -181,6 +170,34 @@ void APlayerCharacter::OnRep_Hp()
 
 
 void APlayerCharacter::AttackRPC_Implementation()
+{
+    TryAttack();
+}
+
+void APlayerCharacter::PlayMontageMulticast_Implementation(UAnimMontage* Montage)
+{
+    PlayAnimMontage(Montage, 1.0f);
+}
+
+void APlayerCharacter::SpawnParticleMulticast_Implementation(FVector ImpactPos)
+{
+    int RandIndex = FMath::RandRange(0, MeleeAttackChargeParticles.Num() - 1);
+    SpawnParticle(MeleeAttackChargeParticles[RandIndex], ImpactPos);
+}
+
+void APlayerCharacter::OnHit(float InDamage, int InHitIdx)
+{
+    if (HasAuthority())
+    {
+        SetHp(GetHp() - InDamage);
+
+        OnResetCombo();
+
+        PlayMontageMulticast(HitMontages[InHitIdx]);
+    }
+}
+
+void APlayerCharacter::TryAttack()
 {
     if (HasAuthority())
     {
@@ -191,30 +208,13 @@ void APlayerCharacter::AttackRPC_Implementation()
         else
         {
             IsAttacking = true;
-            PlayAttackMontageMulticast(AttackIdx);
-            AttackIdx = (AttackIdx + 1) % 4;
+            PlayMontageMulticast(AttackMontages[AttackIdx]);
+            AttackIdx = (AttackIdx + 1) % AttackMontages.Num();
         }
     }
 }
 
-void APlayerCharacter::PlayAttackMontageMulticast_Implementation(int InAttackIdx)
-{
-    PlayAnimMontage(AttackMontages[InAttackIdx], 1.0f);
-}
-
-void APlayerCharacter::PlayHitMontageMulticast_Implementation(int InHitIdx)
-{
-    PlayAnimMontage(HitMontages[InHitIdx], 1.0f);
-}
-
-void APlayerCharacter::SpawnParticleMulticast_Implementation(FVector ImpactPos)
-{
-    int RandIndex = FMath::RandRange(0, MeleeAttackChargeParticles.Num() - 1);
-    SpawnParticle(MeleeAttackChargeParticles[RandIndex], ImpactPos);
-}
-
-
-void APlayerCharacter::OnAttackStart_Implementation()
+void APlayerCharacter::OnAttackStart()
 {
     if (HasAuthority())
     {
@@ -233,7 +233,7 @@ void APlayerCharacter::OnAttackStart_Implementation()
 }
 
 
-void APlayerCharacter::OnAttackEnd_Implementation()
+void APlayerCharacter::OnAttackEnd()
 {
     // logic must be called at server
     if (HasAuthority())
@@ -252,7 +252,7 @@ void APlayerCharacter::OnAttackEnd_Implementation()
 }
 
 
-void APlayerCharacter::OnResetCombo_Implementation()
+void APlayerCharacter::OnResetCombo()
 {
     if (HasAuthority())
     {
@@ -262,7 +262,7 @@ void APlayerCharacter::OnResetCombo_Implementation()
     }
 }
 
-void APlayerCharacter::OnSaveAttack_Implementation()
+void APlayerCharacter::OnSaveAttack()
 {
     if (HasAuthority())
     {
@@ -270,8 +270,8 @@ void APlayerCharacter::OnSaveAttack_Implementation()
         {
             SaveAttack = false;
 
-            PlayAttackMontageMulticast(AttackIdx);
-            AttackIdx = (AttackIdx + 1) % 4;
+            PlayMontageMulticast(AttackMontages[AttackIdx]);
+            AttackIdx = (AttackIdx + 1) % AttackMontages.Num();
         }
     }
 }
@@ -285,35 +285,18 @@ void APlayerCharacter::SpawnParticle(UParticleSystem* Particle, FVector SpawnLoc
 
 void APlayerCharacter::SphereSweep(FVector Start, FVector End, float Radius)
 {
-    FCollisionQueryParams CollParam;
-    FCollisionObjectQueryParams CollObjParam(ECollisionChannel::ECC_Pawn);
-    CollParam.AddIgnoredActor(this);
-
     FHitResult OutHit;
 
-    if (GetWorld()->SweepSingleByObjectType(
-        OutHit,
-        Start,
-        End,
-        FQuat::Identity,
-        CollObjParam,
-        FCollisionShape::MakeSphere(Radius),
-        CollParam))
+    if (IAttackable::SphereSweep(OutHit, this, Start, End, Radius))
     {
-        //UE_LOG(LogTemp, Warning, TEXT("Collision !!!!!!!!!!!!!!!!!!!!!  %s"),
-        //    *OutHit.GetActor()->GetFullName(),
-        //    *OutHit.GetComponent()->GetFullName());
-
         IHittable* HitCharacter = Cast<IHittable>(OutHit.GetActor());
         if (HitCharacter)
         {
             HitCharacter->OnHit(10, 1);
 
             SpawnParticleMulticast(OutHit.ImpactPoint);
-            
-            //GetWorld()->SpawnActor<AActor>(AttackClass, OutHit.ImpactPoint, FQuat::Identity.Rotator());
         }
-    }
+    } 
 }
 
 

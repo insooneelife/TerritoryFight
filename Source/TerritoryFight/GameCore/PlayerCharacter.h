@@ -24,12 +24,6 @@ public:
     APlayerCharacter();
 
     UPROPERTY(EditAnywhere, Category = "My")
-        TSubclassOf<AActor> AttackClass;
-
-    UPROPERTY(EditAnywhere, Category = "My")
-        bool DebugShape;
-
-    UPROPERTY(EditAnywhere, Category = "My")
         TArray<UAnimMontage*> AttackMontages;
 
     UPROPERTY(EditAnywhere, Category = "My")
@@ -91,15 +85,6 @@ protected:
             UPrimitiveComponent* OtherComp,
             int32 OtherBodyIndex);
 
-    // interface
-public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Hittable")
-        void OnHitBlueprint(float InDamage, int InHitIdx);
-
-    virtual void OnHitBlueprint_Implementation(float InDamage, int InHitIdx) override { OnHit(InDamage, InHitIdx); }
-
-    void OnHit(float InDamage, int InHitIdx) override;
-
     // network
 public:
 
@@ -121,39 +106,63 @@ public:
     UFUNCTION(Server, Reliable)
         void AttackRPC();
 
-
     UFUNCTION(NetMulticast, Reliable)
-        void PlayAttackMontageMulticast(int InAttackIdx);
-
-
-    UFUNCTION(NetMulticast, Reliable)
-        void PlayHitMontageMulticast(int InHitIdx);
-
+        void PlayMontageMulticast(UAnimMontage* Montage);
 
     UFUNCTION(NetMulticast, Reliable)
         void SpawnParticleMulticast(FVector ImpactPos);
 
-    // animation notify
+    // hit interface
 public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "My")
-        void OnAttackStart();
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnHit", ScriptName = "OnHit"), Category = "Hittable")
+        void K2_OnHit(float InDamage, int InHitIdx);
 
-    virtual void OnAttackStart_Implementation() override;
+    virtual void K2_OnHit_Implementation(float InDamage, int InHitIdx) override { OnHit(InDamage, InHitIdx); }
 
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "My")
-        void OnAttackEnd();
+    virtual void OnHit(float InDamage, int InHitIdx) override;
 
-    virtual void OnAttackEnd_Implementation() override;
+    virtual void SetDead() override {}
 
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "My")
-        void OnResetCombo();
+    // attackable interface
+public:
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "TryAttack", ScriptName = "TryAttack"), Category = "Attack")
+        void K2_TryAttack();
 
-    virtual void OnResetCombo_Implementation() override;
+    virtual void K2_TryAttack_Implementation() override { TryAttack(); }
 
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "My")
-        void OnSaveAttack();
+    virtual void TryAttack() override;
 
-    virtual void OnSaveAttack_Implementation() override;
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnAttackStart", ScriptName = "OnAttackStart"), Category = "Attack")
+        void K2_OnAttackStart();
+
+    virtual void K2_OnAttackStart_Implementation() override { OnAttackStart(); }
+
+    virtual void OnAttackStart() override;
+
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnAttackEnd", ScriptName = "OnAttackEnd"), Category = "Attack")
+        void K2_OnAttackEnd();
+
+    virtual void K2_OnAttackEnd_Implementation() override { OnAttackEnd(); }
+
+    virtual void OnAttackEnd() override;
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnResetCombo", ScriptName = "OnResetCombo"), Category = "Attack")
+        void K2_OnResetCombo();
+
+    virtual void K2_OnResetCombo_Implementation() override { OnResetCombo(); }
+
+    virtual void OnResetCombo() override;
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnSaveAttack", ScriptName = "OnSaveAttack"), Category = "Attack")
+        void K2_OnSaveAttack();
+
+    virtual void K2_OnSaveAttack_Implementation() override { OnSaveAttack(); }
+
+    virtual void OnSaveAttack() override;
+
+    
 
     // particle system
 private:

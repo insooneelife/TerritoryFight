@@ -22,27 +22,45 @@ class TERRITORYFIGHT_API IAttackable
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "TryAttack", ScriptName = "TryAttack"))
+        void K2_TryAttack();
 
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-        void OnAttackStart();
+    virtual void K2_TryAttack_Implementation() = 0;
 
-    virtual void OnAttackStart_Implementation() = 0;
-
-
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-        void OnAttackEnd();
-
-    virtual void OnAttackEnd_Implementation() = 0;
+    virtual void TryAttack() = 0;
 
 
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-        void OnResetCombo();
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnAttackStart", ScriptName = "OnAttackStart"))
+        void K2_OnAttackStart();
 
-    virtual void OnResetCombo_Implementation() = 0;
+    virtual void K2_OnAttackStart_Implementation() = 0;
+
+    virtual void OnAttackStart() = 0;
 
 
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-        void OnSaveAttack();
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnAttackEnd", ScriptName = "OnAttackEnd"))
+        void K2_OnAttackEnd();
 
-    virtual void OnSaveAttack_Implementation() = 0;
+    virtual void K2_OnAttackEnd_Implementation() = 0;
+
+    virtual void OnAttackEnd() = 0;
+
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnResetCombo", ScriptName = "OnResetCombo"))
+        void K2_OnResetCombo();
+
+    virtual void K2_OnResetCombo_Implementation() = 0;
+
+    virtual void OnResetCombo() = 0;
+
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnSaveAttack", ScriptName = "OnSaveAttack"))
+        void K2_OnSaveAttack();
+
+    virtual void K2_OnSaveAttack_Implementation() = 0;
+
+    virtual void OnSaveAttack() = 0;
+
+    virtual bool SphereSweep(FHitResult& OutHit, AActor* OwnerActor, FVector Start, FVector End, float Radius);
+
 };
