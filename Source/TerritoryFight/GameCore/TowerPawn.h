@@ -41,6 +41,10 @@ public:
     UPROPERTY(Replicated, BlueprintReadWrite, Category = "My")
         float Hp;
 
+private:
+    UPROPERTY(Replicated)
+        bool IsDead;
+
     // IHittable
 public:
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnHit", ScriptName = "OnHit"), Category = "Hittable")
@@ -77,6 +81,4 @@ private:
 
     UPROPERTY()
         AActor* Target;
-
-    bool IsDead;
 };

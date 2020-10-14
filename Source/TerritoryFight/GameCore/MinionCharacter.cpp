@@ -43,6 +43,7 @@ void AMinionCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
     DOREPLIFETIME(AMinionCharacter, Hp);
+    DOREPLIFETIME(AMinionCharacter, IsDead);
 }
 
 // Called every frame
@@ -103,6 +104,11 @@ void AMinionCharacter::OnHit(float InDamage, int InHitIdx)
 {
     if (HasAuthority())
     {
+        if (IsDead)
+        {
+            return;
+        }
+
         this->Hp = this->Hp - InDamage;
 
         if (this->Hp <= 0)

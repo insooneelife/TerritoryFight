@@ -64,6 +64,10 @@ public:
     UFUNCTION(NetMulticast, Reliable)
         void SetRagdollMulticast();
 
+private:
+    UPROPERTY(Replicated)
+        bool IsDead;
+
     // IHittable
 public:
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnHit", ScriptName = "OnHit"), Category = "Hittable")
@@ -132,7 +136,6 @@ private:
     UPROPERTY()
         APawn* OwnerSpawner;
 
-    bool IsDead;
     bool IsCombat;
     FVector StartLocation;
     FVector StartCombatLocation;

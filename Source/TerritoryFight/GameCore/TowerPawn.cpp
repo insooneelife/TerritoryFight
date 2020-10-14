@@ -20,6 +20,8 @@ void ATowerPawn::BeginPlay()
 {
 	Super::BeginPlay();
 	
+    this->Hp = 100;
+
     // get main mesh
     TArray<UActorComponent*> Comps = GetComponentsByTag(UStaticMeshComponent::StaticClass(), FName(TEXT("MainCollider")));
 
@@ -51,6 +53,7 @@ void ATowerPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
     DOREPLIFETIME(ATowerPawn, Hp);
+    DOREPLIFETIME(ATowerPawn, IsDead);
 }
 
 // Called every frame
@@ -71,7 +74,14 @@ void ATowerPawn::OnHit(float InDamage, int InHitIdx)
 {
     if (HasAuthority())
     {
+        if (IsDead)
+        {
+            return;
+        }
+
         this->Hp = this->Hp - InDamage;
+
+        UE_LOG(LogTemp, Warning, TEXT("ATowerPawn OnHit!!!"));
 
         if (this->Hp <= 0)
         {
@@ -90,10 +100,16 @@ void ATowerPawn::SetDead()
 {
     if (HasAuthority())
     {
+        UE_LOG(LogTemp, Warning, TEXT("ATowerPawn SetDead!!!"));
+
         this->IsDead = true;
         //GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
         //PlayMontageMulticast(DeathMontages[InHitIdx]);
+
+
+
+        SetLifeSpan(1.0f);
     }
 }
 
