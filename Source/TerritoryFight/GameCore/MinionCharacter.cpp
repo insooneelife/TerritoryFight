@@ -65,7 +65,7 @@ void AMinionCharacter::Tick(float DeltaTime)
             FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(Loc, TargetLoc);
             
             FRotator TargetRot = FRotator(0.0f, LookAtRot.Yaw, 0.0f);
-            FRotator NewRot = UKismetMathLibrary::RInterpTo(GetActorRotation(), TargetRot, DeltaTime, 5.0f);
+            FRotator NewRot = UKismetMathLibrary::RInterpTo(GetActorRotation(), TargetRot, DeltaTime, 10.0f);
 
             SetActorRotation(NewRot);
         }
