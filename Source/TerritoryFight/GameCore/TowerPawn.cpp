@@ -6,6 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "AIController.h"
 #include "ProjectileInterface.h"
+#include "GameUtils.h"
 
 // Sets default values
 ATowerPawn::ATowerPawn()
@@ -151,18 +152,5 @@ void ATowerPawn::RangeAttack()
 
     FVector ToTarget = (this->Target->GetActorLocation() - LauncherLoc).GetSafeNormal();
 
-    FVector Location = LauncherLoc;
-    FRotator Rotation = ToTarget.ToOrientationQuat().Rotator();
-    FActorSpawnParameters SpawnInfo;
-    SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-    AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(Projectile, Location, Rotation, SpawnInfo);
-
-    if (SpawnedActor->IsValidLowLevel())
-    {
-        if (SpawnedActor->GetClass()->ImplementsInterface(UProjectileInterface::StaticClass()))
-        {
-            IProjectileInterface::Execute_SetShooterOwner(SpawnedActor, this);
-        }
-    }
+    GameUtils::ShootProjectile(this, Projectile, LauncherLoc, ToTarget);
 }

@@ -5,6 +5,7 @@
 #include "DrawDebugHelpers.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "GameFramework/Pawn.h"
 #include <cmath>
 
 
@@ -42,3 +43,5 @@ FQuat TestUtils::RotationVectorToQuat(FVector rv)
     FVector axis = rv.GetSafeNormal();
     return FQuat(axis, angle);
 }
+
+

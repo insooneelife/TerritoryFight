@@ -25,8 +25,8 @@ class TERRITORYFIGHT_API IProjectileInterface
 public:
 
     UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Projectile")
-        APawn* GetShooterOwner() const;
+        AActor* GetShooterOwner() const;
 
     UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Projectile")
-        void SetShooterOwner(APawn* Owner);
+        void SetShooterOwner(AActor* Owner);
 };

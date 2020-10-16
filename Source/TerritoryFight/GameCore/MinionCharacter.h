@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Hittable.h"
 #include "MeleeAttackable.h"
+#include "RangeAttackable.h"
 #include "Targetable.h"
 #include "Spawnable.h"
 #include "../DataTypes.h"
@@ -13,7 +14,7 @@
 
 UCLASS(BlueprintType)
 class TERRITORYFIGHT_API AMinionCharacter : 
-    public ACharacter, public IHittable, public IMeleeAttackable, public ITargetable, public ISpawnable
+    public ACharacter, public IHittable, public IMeleeAttackable, public IRangeAttackable, public ITargetable, public ISpawnable
 {
 	GENERATED_BODY()
 
@@ -31,13 +32,22 @@ public:
         TArray<UAnimMontage*> DeathMontages;
 
     UPROPERTY(EditAnywhere, Category = "My")
+        TSubclassOf<AActor> Projectile;
+
+    UPROPERTY(EditAnywhere, Category = "My")
+        FName LauncherSocketName;
+
+    UPROPERTY(EditAnywhere, Category = "My")
+        bool IsRangeAttack;
+
+    UPROPERTY(EditAnywhere, Category = "My")
         float WalkSpeed;
 
     UPROPERTY(EditAnywhere, Category = "My")
         float RunSpeedMultiplier;
     
     UPROPERTY(EditAnywhere, Category = "My")
-        float MeleeAttackDistance;
+        float AttackRange;
 
 protected:
 	// Called when the game starts or when spawned
@@ -90,6 +100,8 @@ public:
     
     virtual void ClearTarget() override;
 
+    AActor* GetTarget() const { return Target; }
+
     // IMeleeAttackable
 public:
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "TryMeleeAttack", ScriptName = "TryMeleeAttack"), Category = "MeleeAttackable")
@@ -97,9 +109,20 @@ public:
 
     virtual void K2_TryMeleeAttack_Implementation(AActor* InOwner) override { TryMeleeAttack(InOwner); }
 
-    virtual float GetMeleeAttackRange() const override { return 200.0f; }
+    virtual float GetMeleeAttackRange() const override { return AttackRange; }
     virtual float GetMeleeAttackAreaRadius() const override { return 100.0f; }
     virtual float GetMeleeAttackDamage() const override { return 10.0f; }
+
+    // IRangeAttackable
+public:
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "TryRangeAttack", ScriptName = "TryRangeAttack"), Category = "RangeAttackable")
+        void K2_TryRangeAttack(AActor* InOwner);
+
+    virtual void K2_TryRangeAttack_Implementation(AActor* InOwner) override { TryRangeAttack(InOwner); }
+
+    virtual TSubclassOf<AActor> GetProjectile() const override { return Projectile; }
+    virtual FVector GetLauncherLocation() const override { return this->GetMesh()->GetSocketLocation(LauncherSocketName); }
+    virtual FVector GetToTargetDirection() const override { return (this->Target->GetActorLocation() - GetLauncherLocation()).GetSafeNormal(); }
 
     // ISpawnable
 public:
@@ -125,9 +148,6 @@ private:
     float PickAttack(float DistanceToPlayer);
 
     bool GetRandomPointInRadius(const FVector& Origin, float Radius, FVector& OutResult);
-
-
-    
 
 private:
     UPROPERTY()

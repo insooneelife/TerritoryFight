@@ -9,9 +9,6 @@
  */
 class TERRITORYFIGHT_API TestUtils
 {
-public:
-	TestUtils();
-	~TestUtils();
 
 public:
 
@@ -20,5 +17,6 @@ public:
 
     static FVector QuatToRotationVector(FQuat quat);
     static FQuat RotationVectorToQuat(FVector rv);
+
 };
 

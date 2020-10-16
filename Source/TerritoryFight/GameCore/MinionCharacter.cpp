@@ -11,6 +11,7 @@
 #include "DrawDebugHelpers.h"
 #include "Components/CapsuleComponent.h"
 #include "TestUtils.h"
+#include "ProjectileInterface.h"
 
 // Sets default values
 AMinionCharacter::AMinionCharacter()
@@ -228,7 +229,7 @@ void AMinionCharacter::ChaseTarget()
         AAIController* AICon = Cast<AAIController>(GetController());
         if (AICon != nullptr)
         {
-            if (AICon->MoveToActor(this->Target, this->MeleeAttackDistance * 0.5f))
+            if (AICon->MoveToActor(this->Target, this->AttackRange - 100.0f))
             {
                 RunAttack();
             }
@@ -281,13 +282,13 @@ void AMinionCharacter::SetAIMovementType(EAIMovementType MoveType)
 
 float AMinionCharacter::PickAttack(float DistanceToPlayer)
 {
-    if (DistanceToPlayer <= this->MeleeAttackDistance)
+    if (DistanceToPlayer <= this->AttackRange)
     {
         UAnimMontage* PlayMontage = this->AttackMontages[0];
         PlayMontageMulticast(PlayMontage);
 
         GetController()->StopMovement();
-
+        
         return PlayMontage->GetPlayLength();
     }
     return 0.0f;
@@ -316,6 +317,5 @@ void AMinionCharacter::ClearTarget()
 {
     this->Target = nullptr;
 }
-
 
 
