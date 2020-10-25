@@ -13,6 +13,9 @@
 #include "TerritoryFightGameInstance.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/TextRenderComponent.h"
+#include "Components/WidgetComponent.h"
+#include "ObjectWidget.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -41,7 +44,21 @@ void APlayerCharacter::BeginPlay()
     const FVector Location = FVector(0, 0, 0);
     const FRotator Rotation = FRotator::ZeroRotator;
 
-    this->Hp = 100;
+    UWidgetComponent* WidgetComp = Cast<UWidgetComponent>(GetComponentByClass(UWidgetComponent::StaticClass()));
+
+    if (WidgetComp != nullptr)
+    {
+        this->ObjectWidget = Cast<UObjectWidget>(WidgetComp->GetUserWidgetObject());
+    }
+
+    if (this->ObjectWidget == nullptr)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("UObjectWidget is nullptr!!"));
+    }
+    else
+    {
+        SetHp(100.0f);
+    }
 }
 
 void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -60,7 +77,6 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void APlayerCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
@@ -166,6 +182,10 @@ void APlayerCharacter::OnEndOverlap(
 
 void APlayerCharacter::OnRep_Hp()
 {
+    if (this->ObjectWidget)
+    {
+        this->ObjectWidget->UpdateHealth(this->Hp / 100.0f);
+    }
 }
 
 
@@ -299,6 +319,11 @@ void APlayerCharacter::SphereSweep(FVector Start, FVector End, float Radius)
     } 
 }
 
-
-
-
+void APlayerCharacter::SetHp(float InHp) 
+{
+    this->Hp = InHp; 
+    if (this->ObjectWidget)
+    {
+        this->ObjectWidget->UpdateHealth(this->Hp / 100.0f);
+    }
+}

@@ -6,8 +6,11 @@
 #include "GameFramework/Character.h"
 #include "Hittable.h"
 #include "Attackable.h"
+#include "Blueprint/UserWidget.h"
 #include "PlayerCharacter.generated.h"
 
+
+class UObjectWidget;
 class UStaticMeshComponent;
 class ACollisionActor;
 class UParticleSystem;
@@ -43,7 +46,7 @@ public:
     // getter && setter
 public:
     float GetHp() const { return this->Hp; }
-    void SetHp(float InHp) { this->Hp = InHp; }
+    void SetHp(float InHp);
 
 protected:
     // Called when the game starts or when spawned
@@ -180,7 +183,10 @@ private:
     FBodyInstance* LHand;
 
     FVector SaveAttackStartPos;
-    
+
+    UPROPERTY()
+        UObjectWidget* ObjectWidget;
+
 };
 
 

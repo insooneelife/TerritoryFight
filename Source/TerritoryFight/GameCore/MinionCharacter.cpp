@@ -12,6 +12,10 @@
 #include "Components/CapsuleComponent.h"
 #include "TestUtils.h"
 #include "ProjectileInterface.h"
+#include "Components/TextRenderComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/WidgetComponent.h"
+#include "ObjectWidget.h"
 
 // Sets default values
 AMinionCharacter::AMinionCharacter()
@@ -36,7 +40,22 @@ void AMinionCharacter::BeginPlay()
     GetWorldTimerManager().SetTimer(
         UnusedHandle, this, &AMinionCharacter::SetRoaming, 1.0f, false);
 
-    this->Hp = 100;
+    UWidgetComponent* WidgetComp = Cast<UWidgetComponent>(GetComponentByClass(UWidgetComponent::StaticClass()));
+
+    if (WidgetComp != nullptr)
+    {
+        this->ObjectWidget = Cast<UObjectWidget>(WidgetComp->GetUserWidgetObject());
+    }
+    
+    if (this->ObjectWidget == nullptr)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("UObjectWidget is nullptr!!"));
+    }
+    else
+    {
+        SetHp(100.0f);
+    }
+
 }
 
 void AMinionCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -80,6 +99,14 @@ void AMinionCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 }
 
+void AMinionCharacter::OnRep_Hp()
+{
+    if (this->ObjectWidget)
+    {
+        this->ObjectWidget->UpdateHealth(this->Hp / 100.0f);
+    }
+}
+
 void AMinionCharacter::PlayMontageMulticast_Implementation(UAnimMontage* Montage)
 {
     PlayAnimMontage(Montage, 1.0f);
@@ -110,11 +137,11 @@ void AMinionCharacter::OnHit(float InDamage, int InHitIdx)
             return;
         }
 
-        this->Hp = this->Hp - InDamage;
+        SetHp(this->Hp - InDamage);
 
         if (this->Hp <= 0)
         {
-            this->Hp = 0;
+            SetHp(0);
 
             SetDead();
         }
@@ -319,3 +346,11 @@ void AMinionCharacter::ClearTarget()
 }
 
 
+void AMinionCharacter::SetHp(float InHp)
+{
+    this->Hp = InHp;
+    if (this->ObjectWidget)
+    {
+        this->ObjectWidget->UpdateHealth(this->Hp / 100.0f);
+    }
+}

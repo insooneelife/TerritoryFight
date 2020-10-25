@@ -10,7 +10,11 @@
 #include "Targetable.h"
 #include "Spawnable.h"
 #include "../DataTypes.h"
+#include "Blueprint/UserWidget.h"
 #include "MinionCharacter.generated.h"
+
+class UObjectWidget;
+class UTextRenderComponent;
 
 UCLASS(BlueprintType)
 class TERRITORYFIGHT_API AMinionCharacter : 
@@ -65,8 +69,11 @@ public:
     // network
 public:
 
-    UPROPERTY(Replicated, BlueprintReadWrite, Category = "My")
+    UPROPERTY(ReplicatedUsing = OnRep_Hp, BlueprintReadWrite, Category = "My")
         float Hp;
+
+    UFUNCTION()
+        void OnRep_Hp();
 
     UFUNCTION(NetMulticast, Reliable)
         void PlayMontageMulticast(UAnimMontage* Montage);
@@ -136,6 +143,10 @@ public:
 
     virtual void SetOwnerSpawner(APawn* InOwnerSpawner) override { this->OwnerSpawner = InOwnerSpawner; }
 
+    // getter && setter
+public:
+    void SetHp(float InHp);
+
 private:
     void SetRoaming();
     void SetAgro();
@@ -156,7 +167,11 @@ private:
     UPROPERTY()
         APawn* OwnerSpawner;
 
+    UPROPERTY()
+        UObjectWidget* ObjectWidget;
+
     bool IsCombat;
     FVector StartLocation;
     FVector StartCombatLocation;
+
 };
