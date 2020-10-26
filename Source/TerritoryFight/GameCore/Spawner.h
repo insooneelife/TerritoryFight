@@ -24,7 +24,7 @@ class TERRITORYFIGHT_API ISpawner
 public:
 
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnSpawnableDead", ScriptName = "OnSpawnableDead"))
-        void K2_OnSpawnableDead(AActor* DeadActor);
+    void K2_OnSpawnableDead(AActor* DeadActor);
 
     virtual void K2_OnSpawnableDead_Implementation(AActor* DeadActor) = 0;
 

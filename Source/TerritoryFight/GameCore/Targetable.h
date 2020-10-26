@@ -24,7 +24,7 @@ class TERRITORYFIGHT_API ITargetable
 public:
 
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "SetTarget", ScriptName = "SetTarget"))
-        void K2_SetTarget(AActor* InTarget);
+    void K2_SetTarget(AActor* InTarget);
 
     virtual void K2_SetTarget_Implementation(AActor* InTarget) = 0;
 

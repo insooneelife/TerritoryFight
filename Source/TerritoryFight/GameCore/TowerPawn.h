@@ -6,10 +6,11 @@
 #include "GameFramework/Pawn.h"
 #include "Hittable.h"
 #include "Targetable.h"
+#include "GameData.h"
 #include "TowerPawn.generated.h"
 
 UCLASS(BlueprintType)
-class TERRITORYFIGHT_API ATowerPawn : public APawn, public IHittable, public ITargetable
+class TERRITORYFIGHT_API ATowerPawn : public APawn, public IHittable, public ITargetable, public IGameData
 {
 	GENERATED_BODY()
 
@@ -67,6 +68,10 @@ public:
 
     virtual void ClearTarget() override { Target = nullptr; }
 
+    //IGameData
+public:
+    virtual int GetTeamId() const override { return TeamId; }
+
 private:
     void RunAttack();
 
@@ -74,11 +79,14 @@ private:
 
 private:
     UPROPERTY()
-        UStaticMeshComponent* MainMesh;
+    UStaticMeshComponent* MainMesh;
     
     UPROPERTY()
-        USceneComponent* Launcher;
+    USceneComponent* Launcher;
 
     UPROPERTY()
-        AActor* Target;
+    AActor* Target;
+
+    UPROPERTY(EditAnywhere)
+    int TeamId;
 };

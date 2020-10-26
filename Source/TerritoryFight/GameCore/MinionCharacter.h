@@ -9,6 +9,7 @@
 #include "RangeAttackable.h"
 #include "Targetable.h"
 #include "Spawnable.h"
+#include "GameData.h"
 #include "../DataTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "MinionCharacter.generated.h"
@@ -18,7 +19,7 @@ class UTextRenderComponent;
 
 UCLASS(BlueprintType)
 class TERRITORYFIGHT_API AMinionCharacter : 
-    public ACharacter, public IHittable, public IMeleeAttackable, public IRangeAttackable, public ITargetable, public ISpawnable
+	public ACharacter, public IHittable, public IMeleeAttackable, public IRangeAttackable, public ITargetable, public ISpawnable, public IGameData
 {
 	GENERATED_BODY()
 
@@ -26,38 +27,11 @@ public:
 	// Sets default values for this character's properties
 	AMinionCharacter();
 
-    UPROPERTY(EditAnywhere, Category = "My")
-        TArray<UAnimMontage*> AttackMontages;
-
-    UPROPERTY(EditAnywhere, Category = "My")
-        TArray<UAnimMontage*> HitMontages;
-
-    UPROPERTY(EditAnywhere, Category = "My")
-        TArray<UAnimMontage*> DeathMontages;
-
-    UPROPERTY(EditAnywhere, Category = "My")
-        TSubclassOf<AActor> Projectile;
-
-    UPROPERTY(EditAnywhere, Category = "My")
-        FName LauncherSocketName;
-
-    UPROPERTY(EditAnywhere, Category = "My")
-        bool IsRangeAttack;
-
-    UPROPERTY(EditAnywhere, Category = "My")
-        float WalkSpeed;
-
-    UPROPERTY(EditAnywhere, Category = "My")
-        float RunSpeedMultiplier;
-    
-    UPROPERTY(EditAnywhere, Category = "My")
-        float AttackRange;
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:	
 	// Called every frame
@@ -66,112 +40,146 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-    // network
+	// network
 public:
 
-    UPROPERTY(ReplicatedUsing = OnRep_Hp, BlueprintReadWrite, Category = "My")
-        float Hp;
+	UPROPERTY(ReplicatedUsing = OnRep_Hp, BlueprintReadWrite, Category = "My")
+	float Hp;
 
-    UFUNCTION()
-        void OnRep_Hp();
+	UFUNCTION()
+	void OnRep_Hp();
 
-    UFUNCTION(NetMulticast, Reliable)
-        void PlayMontageMulticast(UAnimMontage* Montage);
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayMontageMulticast(UAnimMontage* Montage);
 
-    UFUNCTION(NetMulticast, Reliable)
-        void SetRagdollMulticast();
+	UFUNCTION(NetMulticast, Reliable)
+	void SetRagdollMulticast();
 
 private:
-    UPROPERTY(Replicated)
-        bool IsDead;
+	UPROPERTY(Replicated)
+	bool IsDead;
 
-    // IHittable
+	// IHittable
 public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnHit", ScriptName = "OnHit"), Category = "Hittable")
-        void K2_OnHit(float InDamage, int InHitIdx);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "OnHit", ScriptName = "OnHit"), Category = "Hittable")
+	void K2_OnHit(float InDamage, int InHitIdx);
 
-    virtual void K2_OnHit_Implementation(float InDamage, int InHitIdx) override { OnHit(InDamage, InHitIdx); }
+	virtual void K2_OnHit_Implementation(float InDamage, int InHitIdx) override { OnHit(InDamage, InHitIdx); }
 
-    virtual void OnHit(float InDamage, int InHitIdx) override;
+	virtual void OnHit(float InDamage, int InHitIdx) override;
 
-    virtual void SetDead() override;
+	virtual void SetDead() override;
 
-    // ITargetable
+	// ITargetable
 public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "SetTarget", ScriptName = "SetTarget"), Category = "Targetable")
-        void K2_SetTarget(AActor* InTarget);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "SetTarget", ScriptName = "SetTarget"), Category = "Targetable")
+	void K2_SetTarget(AActor* InTarget);
 
-    virtual void K2_SetTarget_Implementation(AActor* InTarget) override { SetTarget(InTarget); };
+	virtual void K2_SetTarget_Implementation(AActor* InTarget) override { SetTarget(InTarget); };
 
-    virtual void SetTarget(AActor* InTarget) override;
-    
-    virtual void ClearTarget() override;
+	virtual void SetTarget(AActor* InTarget) override;
+	
+	virtual void ClearTarget() override;
 
-    AActor* GetTarget() const { return Target; }
+	AActor* GetTarget() const { return Target; }
 
-    // IMeleeAttackable
+	// IMeleeAttackable
 public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "TryMeleeAttack", ScriptName = "TryMeleeAttack"), Category = "MeleeAttackable")
-        void K2_TryMeleeAttack(AActor* InOwner);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "TryMeleeAttack", ScriptName = "TryMeleeAttack"), Category = "MeleeAttackable")
+	void K2_TryMeleeAttack(AActor* InOwner);
 
-    virtual void K2_TryMeleeAttack_Implementation(AActor* InOwner) override { TryMeleeAttack(InOwner); }
+	virtual void K2_TryMeleeAttack_Implementation(AActor* InOwner) override { TryMeleeAttack(InOwner); }
 
-    virtual float GetMeleeAttackRange() const override { return AttackRange; }
-    virtual float GetMeleeAttackAreaRadius() const override { return 100.0f; }
-    virtual float GetMeleeAttackDamage() const override { return 10.0f; }
+	virtual float GetMeleeAttackRange() const override { return AttackRange; }
+	virtual float GetMeleeAttackAreaRadius() const override { return 100.0f; }
+	virtual float GetMeleeAttackDamage() const override { return 10.0f; }
 
-    // IRangeAttackable
+	// IRangeAttackable
 public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "TryRangeAttack", ScriptName = "TryRangeAttack"), Category = "RangeAttackable")
-        void K2_TryRangeAttack(AActor* InOwner);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "TryRangeAttack", ScriptName = "TryRangeAttack"), Category = "RangeAttackable")
+	void K2_TryRangeAttack(AActor* InOwner);
 
-    virtual void K2_TryRangeAttack_Implementation(AActor* InOwner) override { TryRangeAttack(InOwner); }
+	virtual void K2_TryRangeAttack_Implementation(AActor* InOwner) override { TryRangeAttack(InOwner); }
 
-    virtual TSubclassOf<AActor> GetProjectile() const override { return Projectile; }
-    virtual FVector GetLauncherLocation() const override { return this->GetMesh()->GetSocketLocation(LauncherSocketName); }
-    virtual FVector GetToTargetDirection() const override { return (this->Target->GetActorLocation() - GetLauncherLocation()).GetSafeNormal(); }
+	virtual TSubclassOf<AActor> GetProjectile() const override { return Projectile; }
+	virtual FVector GetLauncherLocation() const override { return this->GetMesh()->GetSocketLocation(LauncherSocketName); }
+	virtual FVector GetToTargetDirection() const override { return (this->Target->GetActorLocation() - GetLauncherLocation()).GetSafeNormal(); }
 
-    // ISpawnable
+	// ISpawnable
 public:
-    virtual APawn* GetOwnerSpawner() const override { return this->OwnerSpawner; }
+	virtual APawn* GetOwnerSpawner() const override { return this->OwnerSpawner; }
 
 
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "SetOwnerSpawner", ScriptName = "SetOwnerSpawner"), Category = "Spawnable")
-        void K2_SetOwnerSpawner(APawn* InOwnerSpawner);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, meta = (DisplayName = "SetOwnerSpawner", ScriptName = "SetOwnerSpawner"), Category = "Spawnable")
+	void K2_SetOwnerSpawner(APawn* InOwnerSpawner);
 
-    virtual void K2_SetOwnerSpawner_Implementation(APawn* InOwnerSpawner) override { SetOwnerSpawner(InOwnerSpawner); }
+	virtual void K2_SetOwnerSpawner_Implementation(APawn* InOwnerSpawner) override { SetOwnerSpawner(InOwnerSpawner); }
 
-    virtual void SetOwnerSpawner(APawn* InOwnerSpawner) override { this->OwnerSpawner = InOwnerSpawner; }
+	virtual void SetOwnerSpawner(APawn* InOwnerSpawner) override { this->OwnerSpawner = InOwnerSpawner; }
 
-    // getter && setter
+    // IGameData
 public:
-    void SetHp(float InHp);
+    virtual int GetTeamId() const override { return TeamId; }
+
+	// getter && setter
+public:
+	void SetHp(float InHp);
 
 private:
-    void SetRoaming();
-    void SetAgro();
+	void SetRoaming();
+	void SetAgro();
 
-    void ChaseTarget();
+	void ChaseTarget();
 
-    void RunAttack();
+	void RunAttack();
 
-    void SetAIMovementType(EAIMovementType MoveType); 
-    float PickAttack(float DistanceToPlayer);
+	void SetAIMovementType(EAIMovementType MoveType); 
+	float PickAttack(float DistanceToPlayer);
 
-    bool GetRandomPointInRadius(const FVector& Origin, float Radius, FVector& OutResult);
+	bool GetRandomPointInRadius(const FVector& Origin, float Radius, FVector& OutResult);
 
 private:
-    UPROPERTY()
-        AActor* Target;
+    UPROPERTY(EditAnywhere)
+    TArray<UAnimMontage*> AttackMontages;
 
-    UPROPERTY()
-        APawn* OwnerSpawner;
+    UPROPERTY(EditAnywhere)
+    TArray<UAnimMontage*> HitMontages;
 
-    UPROPERTY()
-        UObjectWidget* ObjectWidget;
+    UPROPERTY(EditAnywhere)
+    TArray<UAnimMontage*> DeathMontages;
 
-    bool IsCombat;
-    FVector StartLocation;
-    FVector StartCombatLocation;
+    UPROPERTY(EditAnywhere)
+    TSubclassOf<AActor> Projectile;
+
+    UPROPERTY(EditAnywhere)
+    FName LauncherSocketName;
+
+    UPROPERTY(EditAnywhere)
+    bool IsRangeAttack;
+
+    UPROPERTY(EditAnywhere)
+    float WalkSpeed;
+
+    UPROPERTY(EditAnywhere)
+    float RunSpeedMultiplier;
+
+    UPROPERTY(EditAnywhere)
+    float AttackRange;
+
+	UPROPERTY()
+	AActor* Target;
+
+	UPROPERTY()
+	APawn* OwnerSpawner;
+
+	UPROPERTY()
+	UObjectWidget* ObjectWidget;
+
+	bool IsCombat;
+	FVector StartLocation;
+	FVector StartCombatLocation;
+
+    UPROPERTY(EditAnywhere)
+    int TeamId;
 
 };
