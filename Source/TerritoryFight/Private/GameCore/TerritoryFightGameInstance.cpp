@@ -147,9 +147,9 @@ void UTerritoryFightGameInstance::OnCreateSessionComplete(FName SessionName, boo
     UWorld* World = GetWorld();
     if (!ensure(World != nullptr)) return;
 
-    const FString LISTEN_TERM = TEXT("?listen");
+    const FString ListenTerm = TEXT("?listen");
 
-    const FString ServerTravelPath = LOBBY_MAP_PATH + LISTEN_TERM;
+    const FString ServerTravelPath = LOBBY_MAP_PATH + ListenTerm;
 
     World->ServerTravel(ServerTravelPath);
 }
